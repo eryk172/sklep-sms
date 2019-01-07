@@ -14,6 +14,13 @@ class ServerRepository
         $this->db = $db;
     }
 
+    /**
+     * @param string $name
+     * @param string $ip
+     * @param string $port
+     * @param string $smsService
+     * @return Server
+     */
     public function create($name, $ip, $port, $smsService = '')
     {
         $this->db->query($this->db->prepare(

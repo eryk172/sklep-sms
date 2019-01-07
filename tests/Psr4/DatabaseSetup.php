@@ -2,6 +2,7 @@
 namespace Tests\Psr4;
 
 use App\Database;
+use App\Repositories\ServerRepository;
 use Install\DatabaseMigration;
 
 class DatabaseSetup
@@ -12,10 +13,14 @@ class DatabaseSetup
     /** @var DatabaseMigration */
     private $databaseMigration;
 
-    public function __construct(Database $db, DatabaseMigration $databaseMigration)
+    /** @var ServerRepository */
+    private $serverRepository;
+
+    public function __construct(Database $db, DatabaseMigration $databaseMigration, ServerRepository $serverRepository)
     {
         $this->db = $db;
         $this->databaseMigration = $databaseMigration;
+        $this->serverRepository = $serverRepository;
     }
 
     public function runForTests()
@@ -33,6 +38,7 @@ class DatabaseSetup
         $this->db->createDatabaseIfNotExists('sklep_sms');
         $this->db->selectDb('sklep_sms');
         $this->db->dropAllTables();
-        $this->databaseMigration->install('abc123', 'admin', 'abc123');
+        $this->databaseMigration->install('70693f66df6ed2210c9ed5c7d8c8e001b4f12f81', 'admin', 'abc123');
+        $this->serverRepository->create("My server", "172.19.0.5", 27015);
     }
 }
