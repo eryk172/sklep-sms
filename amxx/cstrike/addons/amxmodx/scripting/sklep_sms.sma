@@ -818,7 +818,7 @@ public load_shop_data()
 	JOIN `ss_settings` h \
 	JOIN `ss_settings` i \
 	JOIN `ss_settings` j \
-	WHERE g.key = 'shop_url' AND h.key = 'vat' AND i.key = 'random_key' AND j.key = 'currency' AND c.sms = '1' AND a.ip = '%s' AND a.port = '%s' ORDER BY d.order, e.tariff, e.server DESC", serverIP, serverPort);
+	WHERE g.key = 'shop_url' AND h.key = 'vat' AND i.key = 'random_key' AND j.key = 'currency' AND c.sms = '1' AND a.ip = '%s' AND a.port = '%s' ORDER BY b.service_id DESC, e.tariff ASC;", serverIP, serverPort);
 
 	SQL_ThreadQuery(sql, "load_shop_data_handle", queryData);
 }
