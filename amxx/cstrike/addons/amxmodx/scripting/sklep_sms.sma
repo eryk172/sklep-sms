@@ -142,7 +142,7 @@ public show_services(id)
 
 	formatex(queryData, charsmax(queryData), "SELECT a.type, b.expire, c.name FROM `ss_user_service_extra_flags` a \
 		JOIN `ss_user_service` b ON a.us_id = b.id JOIN `ss_services` c ON a.service = c.id \
-		WHERE a.server = '%i' AND (a.auth_data = '%s' OR a.auth_data = '%s' OR a.auth_data = '%s')",
+		WHERE a.server = '%i' AND (a.auth_data = '%s' OR a.auth_data = '%s' OR a.auth_data = '%s');",
 		server[SERVER_ID], safeName, playerBuy[id][PLAYER_IP], playerBuy[id][PLAYER_SID]);
 
 	SQL_ThreadQuery(sql, "show_services_menu", queryData, playerId, sizeof(playerId));
@@ -343,7 +343,8 @@ public service_tariff_handle(id, menu, item)
 	}
 
 	if (service[SERVICE_TYPES]) {
-		new menu = menu_create("\rSKLEP SMS^n\yWybierz typ uslugi:\w", "service_type_handle"), callback = menu_makecallback("service_tariff_callback");
+		new menu = menu_create("\rSKLEP SMS^n\yWybierz typ uslugi:\w", "service_type_handle"),
+			callback = menu_makecallback("service_tariff_callback");
 
 		menu_additem(menu, "Na Nick i Haslo", _, _, callback);
 		menu_additem(menu, "Na IP i Haslo", _, _, callback);
@@ -363,7 +364,7 @@ public service_tariff_callback(id, menu, item)
 
 	ArrayGetArray(shopServices, playerBuy[id][PLAYER_SERVICE], service);
 
-	switch(item) {
+	switch (item) {
 		case 0: if (!(service[SERVICE_TYPES] & TYPE_NICK)) return ITEM_DISABLED;
 		case 1: if (!(service[SERVICE_TYPES] & TYPE_IP)) return ITEM_DISABLED;
 		case 2: if (!(service[SERVICE_TYPES] & TYPE_SID) || !is_user_steam(id)) return ITEM_DISABLED;
@@ -384,7 +385,7 @@ public service_type_handle(id, menu, item)
 
 	menu_destroy(menu);
 
-	switch(item) {
+	switch (item) {
 		case 0: {
 			playerBuy[id][PLAYER_TYPE] = TYPE_NICK;
 
@@ -478,7 +479,8 @@ public service_password(id)
 
 	tempId[0] = id;
 
-	formatex(queryData, charsmax(queryData), "SELECT password FROM `ss_players_flags` WHERE (auth_data = '%s' OR auth_data = '%s') AND server = '%i'", safeName, playerBuy[id][PLAYER_IP], server[SERVER_ID]);
+	formatex(queryData, charsmax(queryData), "SELECT password FROM `ss_players_flags` WHERE (auth_data = '%s' OR auth_data = '%s') AND server = '%i';",
+		safeName, playerBuy[id][PLAYER_IP], server[SERVER_ID]);
 	SQL_ThreadQuery(sql, "service_password_validate", queryData, tempId, sizeof(tempId));
 
 	return PLUGIN_HANDLED;
@@ -739,8 +741,9 @@ public service_code_verified(id)
 
 				ExecuteForward(forwardAdminConnect, ret, id);
 			} else client_print_color(id, id, "^x04[SKLEP-SMS]^x01 Zakupiles^x04 %s^x01:^x03 %i %s^x01.", service[SERVICE_NAME], tariff[SERVICE_AMOUNT], service[SERVICE_TAG]);
-		} else if (equal(responseReturnValue, "bad_code") || equal(responseReturnValue, "bad_data") || equal(responseReturnValue, "bad_email") || equal(responseReturnValue, "bad_number")) client_print_color(id, id, "^x04[SKLEP-SMS]^x01 %s", responseText);
-		else {
+		} else if (equal(responseReturnValue, "bad_code") || equal(responseReturnValue, "bad_data") || equal(responseReturnValue, "bad_email") || equal(responseReturnValue, "bad_number")) {
+			client_print_color(id, id, "^x04[SKLEP-SMS]^x01 %s", responseText);
+		} else {
 			log_to_file(LOG_FILE, "[ERROR] %s", socketResponse);
 
 			new motdData[1024];
@@ -781,7 +784,7 @@ public sql_init()
 
 	new queryData[512];
 
-	formatex(queryData, charsmax(queryData), "UPDATE `ss_servers` SET type = 'amxx', version = '%s' WHERE ip = '%s' AND port = '%s'", VERSION, serverIP, serverPort);
+	formatex(queryData, charsmax(queryData), "UPDATE `ss_servers` SET type = 'amxx', version = '%s' WHERE ip = '%s' AND port = '%s';", VERSION, serverIP, serverPort);
 
 	new Handle:query = SQL_PrepareQuery(connection, queryData);
 
@@ -833,8 +836,10 @@ public load_shop_data_handle(failState, Handle:query, error[], errorNum, playerI
 
 			#if AMXX_VERSION_NUM < 183
 			new serverKey[34];
+
 			md5(server[SERVER_KEY], serverKey);
-			copy(server[SERVER_KEY], charsmax(server[SERVER_KEY]), serverKey)
+
+			copy(server[SERVER_KEY], charsmax(server[SERVER_KEY]), serverKey);
 			#else
 			hash_string(server[SERVER_KEY], Hash_Md5, server[SERVER_KEY], charsmax(server[SERVER_KEY]));
 			#endif
@@ -1005,16 +1010,19 @@ public load_flags(id)
 	get_user_ip(id, playerBuy[id][PLAYER_IP], charsmax(playerBuy[][PLAYER_IP]), 1);
 	get_user_authid(id, playerBuy[id][PLAYER_SID], charsmax(playerBuy[][PLAYER_SID]));
 
+	playerBuy[id][PLAYER_FLAGS] = "";
+
 	new flags[flagsData], ret;
 
 	for (new i = 0; i < ArraySize(playerServices); i++) {
 		ArrayGetArray(playerServices, i, flags);
 
-		switch(flags[FLAGS_TYPE]) {
+		switch (flags[FLAGS_TYPE]) {
 			case TYPE_NICK: {
 				if (equal(flags[FLAGS_AUTH], playerBuy[id][PLAYER_NAME])) {
-					if (equal(flags[FLAGS_PASSWORD], playerBuy[id][PLAYER_PASS_SS]) || equal(flags[FLAGS_PASSWORD], playerBuy[id][PLAYER_PASS_PW])) add(playerBuy[id][PLAYER_FLAGS], charsmax(playerBuy[][PLAYER_FLAGS]), flags[FLAGS_FLAGS], charsmax(flags[FLAGS_FLAGS]));
-					else {
+					if (equal(flags[FLAGS_PASSWORD], playerBuy[id][PLAYER_PASS_SS]) || equal(flags[FLAGS_PASSWORD], playerBuy[id][PLAYER_PASS_PW])) {
+						add(playerBuy[id][PLAYER_FLAGS], charsmax(playerBuy[][PLAYER_FLAGS]), flags[FLAGS_FLAGS], charsmax(flags[FLAGS_FLAGS]));
+					} else {
 						server_cmd("kick #%d ^"Nieprawidlowe haslo^"", get_user_userid(id));
 
 						break;
@@ -1055,7 +1063,7 @@ public check_service_unlimited(id, service[], flags[])
 
 	formatex(queryData, charsmax(queryData), "SELECT b.expire FROM `ss_user_service_extra_flags` a \
 		JOIN `ss_user_service` b ON a.us_id = b.id JOIN `ss_services` c ON a.service = c.id \
-		WHERE a.server = '%i' AND (a.auth_data = '%s' OR a.auth_data = '%s' OR a.auth_data = '%s') AND a.service = '%s'",
+		WHERE a.server = '%i' AND (a.auth_data = '%s' OR a.auth_data = '%s' OR a.auth_data = '%s') AND a.service = '%s';",
 		server[SERVER_ID], safeName, playerBuy[id][PLAYER_IP], playerBuy[id][PLAYER_SID], serviceName);
 
 	new error[128], errorNum, Handle:query;
@@ -1088,7 +1096,11 @@ public amxbans_sql_initialized(info, const prefix[])
 }
 
 public reload_players_flags()
-	for (new id = 1; id <= MAX_PLAYERS; id++) if (is_user_connected(id)) load_flags(id);
+{
+	for (new id = 1; id <= MAX_PLAYERS; id++) {
+		if (is_user_connected(id) || is_user_connecting(id)) load_flags(id);
+	}
+}
 
 public _ss_register_service(plugin, params)
 {
