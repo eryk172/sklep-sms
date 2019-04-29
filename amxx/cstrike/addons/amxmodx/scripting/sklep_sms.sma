@@ -104,7 +104,7 @@ public plugin_end()
 
 public plugin_natives()
 {
-	register_library("shop_sms");
+	register_library("sklep_sms");
 
 	register_native("ss_register_service", "_ss_register_service");
 	register_native("ss_show_sms_info", "_ss_show_sms_info", 1);
