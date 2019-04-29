@@ -36,6 +36,9 @@ new cvarHost[32], cvarUser[32], cvarPassword[32], cvarDatabase[32], cvarProvider
 new pcvarHost, pcvarUser, pcvarPassword, pcvarDatabase;
 #endif
 
+forward amxbans_admin_connect(id, amxbans);
+forward client_admin(id, flags);
+
 public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR);
@@ -74,7 +77,7 @@ public plugin_init()
 
 	register_menucmd(register_menuid("SMS_Info"), (MENU_KEY_1 | MENU_KEY_0), "service_buy_handle");
 
-	forwardAdminConnect = CreateMultiForward("amxbans_admin_connect", ET_IGNORE, FP_CELL);
+	forwardAdminConnect = CreateMultiForward("amxbans_admin_connect", ET_IGNORE, FP_CELL, FP_CELL);
 }
 
 public plugin_cfg()
@@ -112,6 +115,12 @@ public plugin_natives()
 
 public client_authorized(id)
 	load_flags(id);
+
+public client_admin(id, flags)
+	load_flags(id);
+
+public amxbans_admin_connect(id, amxbans)
+	if (amxbans) load_flags(id);
 
 #if AMXX_VERSION_NUM < 183
 public client_disconnect(id)
@@ -219,7 +228,7 @@ public shop_menu(id)
 		playerBuy[id][PLAYER_BUYING] = true;
 
 		new service[serviceData], callback = menu_makecallback("shop_menu_callback"),
-        menu = menu_create("\rSKLEP SMS^n\yWybierz usluge:\w", "shop_menu_handle");
+		menu = menu_create("\rSKLEP SMS^n\yWybierz usluge:\w", "shop_menu_handle");
 
 		for (new i = 0; i < ArraySize(shopServices); i++) {
 			ArrayGetArray(shopServices, i, service);
@@ -739,7 +748,7 @@ public service_code_verified(id)
 
 				ArrayPushArray(playerServices, flags);
 
-				ExecuteForward(forwardAdminConnect, ret, id);
+				ExecuteForward(forwardAdminConnect, ret, id, false);
 			} else client_print_color(id, id, "^x04[SKLEP-SMS]^x01 Zakupiles^x04 %s^x01:^x03 %i %s^x01.", service[SERVICE_NAME], tariff[SERVICE_AMOUNT], service[SERVICE_TAG]);
 		} else if (equal(responseReturnValue, "bad_code") || equal(responseReturnValue, "bad_data") || equal(responseReturnValue, "bad_email") || equal(responseReturnValue, "bad_number")) {
 			client_print_color(id, id, "^x04[SKLEP-SMS]^x01 %s", responseText);
@@ -889,7 +898,7 @@ public load_shop_services()
 		LEFT JOIN `ss_services` AS b ON a.service_id = b.id \
 		LEFT JOIN `ss_pricelist` AS c ON (a.service_id = c.service AND (c.server = a.server_id OR c.server = '%i')) \
 		LEFT JOIN `ss_sms_numbers` AS d ON (c.tariff = d.tariff AND d.service = '%s') \
-		WHERE a.server_id = '%i' ORDER BY b.order, a.service_id, c.server DESC, c.tariff DESC",
+		WHERE a.server_id = '%i' ORDER BY b.order, a.service_id, c.server DESC, c.tariff DESC;",
 		NONE, server[SERVER_SERVICE], server[SERVER_ID]);
 
 	SQL_ThreadQuery(sql, "load_shop_services_handle", queryData);
@@ -1030,14 +1039,19 @@ public load_flags(id)
 				}
 			} case TYPE_IP: {
 				if (equal(flags[FLAGS_AUTH], playerBuy[id][PLAYER_IP])) {
-					if (playerBuy[id][PLAYER_PASS_SS] && (equal(flags[FLAGS_PASSWORD], playerBuy[id][PLAYER_PASS_SS]) || equal(flags[FLAGS_PASSWORD], playerBuy[id][PLAYER_PASS_PW]))) add(playerBuy[id][PLAYER_FLAGS], charsmax(playerBuy[][PLAYER_FLAGS]), flags[FLAGS_FLAGS], charsmax(flags[FLAGS_FLAGS]));
-					else {
+					if (playerBuy[id][PLAYER_PASS_SS] && (equal(flags[FLAGS_PASSWORD], playerBuy[id][PLAYER_PASS_SS]) || equal(flags[FLAGS_PASSWORD], playerBuy[id][PLAYER_PASS_PW]))) {
+						add(playerBuy[id][PLAYER_FLAGS], charsmax(playerBuy[][PLAYER_FLAGS]), flags[FLAGS_FLAGS], charsmax(flags[FLAGS_FLAGS]));
+					} else {
 						server_cmd("kick #%d ^"Nieprawidlowe haslo^"", get_user_userid(id));
 
 						break;
 					}
 				}
-			} case TYPE_SID: if (equal(flags[FLAGS_AUTH], playerBuy[id][PLAYER_SID])) add(playerBuy[id][PLAYER_FLAGS], charsmax(playerBuy[][PLAYER_FLAGS]), flags[FLAGS_FLAGS], charsmax(flags[FLAGS_FLAGS]));
+			} case TYPE_SID: {
+				if (equal(flags[FLAGS_AUTH], playerBuy[id][PLAYER_SID])) {
+					add(playerBuy[id][PLAYER_FLAGS], charsmax(playerBuy[][PLAYER_FLAGS]), flags[FLAGS_FLAGS], charsmax(flags[FLAGS_FLAGS]));
+				}
+			}
 		}
 	}
 
@@ -1045,7 +1059,7 @@ public load_flags(id)
 
 	set_user_flags(id, get_user_flags(id) | read_flags(playerBuy[id][PLAYER_FLAGS]));
 
-	ExecuteForward(forwardAdminConnect, ret, id);
+	ExecuteForward(forwardAdminConnect, ret, id, false);
 
 	log_amx("Login: ^"%s<%d><%s><>^" became an admin (account ^"%s^") (access ^"%s^") (address ^"%s^") (nick ^"^") (static 0)",
 		playerBuy[id][PLAYER_NAME], get_user_userid(id), playerBuy[id][PLAYER_SID], playerBuy[id][PLAYER_SID], playerBuy[id][PLAYER_FLAGS], playerBuy[id][PLAYER_IP]);
@@ -1211,37 +1225,37 @@ stock mysql_escape_string(const source[], dest[], length)
 stock url_encode(const source[], dest[], length)
 {
 	static const hexChars[16] = {
-        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66
+		0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+		0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66
 	};
 
 	new urlPos, urlChar, urlLength;
 
 	while ((urlChar = source[urlPos]) && urlLength < length) {
-        if (urlChar == 0x20) {
-            dest[urlLength++] = 0x2B;
-        } else if (
-        	!(0x41 <= urlChar <= 0x5A)
-        	&& !(0x61 <= urlChar <= 0x7A)
-        	&& !(0x30 <= urlChar <= 0x39)
-        	&& urlChar != 0x2D
-        	&& urlChar != 0x2E
-        	&& urlChar != 0x5F
-        ) {
-            if((urlLength + 3) > length) {
-                break;
-            } else if(urlChar > 0xFF || urlChar < 0x00) {
-                urlChar = 0x2A;
-            }
+		if (urlChar == 0x20) {
+			dest[urlLength++] = 0x2B;
+		} else if (
+			!(0x41 <= urlChar <= 0x5A)
+			&& !(0x61 <= urlChar <= 0x7A)
+			&& !(0x30 <= urlChar <= 0x39)
+			&& urlChar != 0x2D
+			&& urlChar != 0x2E
+			&& urlChar != 0x5F
+		) {
+			if((urlLength + 3) > length) {
+				break;
+			} else if(urlChar > 0xFF || urlChar < 0x00) {
+				urlChar = 0x2A;
+			}
 
-            dest[urlLength++] = 0x25;
-            dest[urlLength++] = hexChars[urlChar >> 4];
-            dest[urlLength++] = hexChars[urlChar & 15];
-        } else {
-            dest[urlLength++] = urlChar;
-        }
+			dest[urlLength++] = 0x25;
+			dest[urlLength++] = hexChars[urlChar >> 4];
+			dest[urlLength++] = hexChars[urlChar & 15];
+		} else {
+			dest[urlLength++] = urlChar;
+		}
 
-        urlPos++;
+		urlPos++;
 	}
 
 	dest[urlLength] = 0;
