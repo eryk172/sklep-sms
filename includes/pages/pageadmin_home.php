@@ -145,11 +145,11 @@ class PageAdminMain extends PageAdmin
      */
     private function isServerNewest($server, $newestAmxxVersion, $newestSmVersion)
     {
-        if ($server['type'] === Server::TYPE_AMXMODX && $server['version'] !== $newestAmxxVersion) {
+        if ($server['type'] === Server::TYPE_AMXMODX && $newestAmxxVersion !== null && $server['version'] !== $newestAmxxVersion) {
             return false;
         }
 
-        if ($server['type'] === Server::TYPE_SOURCEMOD && $server['version'] !== $newestSmVersion) {
+        if ($server['type'] === Server::TYPE_SOURCEMOD && $newestSmVersion !== null && $server['version'] !== $newestSmVersion) {
             return false;
         }
 
