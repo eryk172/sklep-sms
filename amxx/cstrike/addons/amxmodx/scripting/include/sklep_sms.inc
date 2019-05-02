@@ -3,7 +3,7 @@
 #endif
 #define _sklep_sms_included
 
-#pragma library "shop_sms"
+#pragma library "sklep_sms"
 
 #define VERSION "3.6.6"
 
